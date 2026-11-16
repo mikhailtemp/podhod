@@ -327,8 +327,8 @@ function vProg() {
 
 // ---------- Настройки ----------
 function vSettings() {
-  const list = S.exercises.map(e => `<div class="line"><div><b>${esc(e.name)}</b><small style="color:var(--mute);display:block">${e.type === 'run' ? 'интервальный бег' : (e.type === 'time' ? 'на время' : 'на повторения') + (e.goal ? ' · цель ' + e.goal : '') + (e.max ? ' · уровень ' + e.max : '')}</small></div>
-    <div class="row" style="flex:0 0 auto">${e.type === 'run' ? '' : `<button data-a="retest" data-id="${esc(e.id)}">Замер</button>`}<button class="danger" data-a="del" data-id="${esc(e.id)}">Удалить</button></div></div>`).join('');
+  const list = S.exercises.map(e => `<div class="line" style="display:block"><div><b>${esc(e.name)}</b><small style="color:var(--mute);display:block">${e.type === 'run' ? 'интервальный бег' : (e.type === 'time' ? 'на время' : 'на повторения') + (e.goal ? ' · цель ' + e.goal : '') + (e.max ? ' · уровень ' + e.max : '')}</small></div>
+    <div class="row" style="margin-top:8px">${e.type === 'run' ? '' : `<button data-a="retest" data-id="${esc(e.id)}">Замер</button>`}<button data-a="restart" data-id="${esc(e.id)}">Заново</button><button class="danger" data-a="del" data-id="${esc(e.id)}">Удалить</button></div></div>`).join('');
   return `<h1>Настройки</h1><p class="sub">Данные хранятся только на этом устройстве</p>
     <div class="card">
       <div class="line"><span>Отдых между подходами</span><div class="step"><button data-a="rest" data-v="-5">−</button><b>${S.settings.rest} сек</b><button data-a="rest" data-v="5">+</button></div></div>
@@ -340,6 +340,7 @@ function vSettings() {
       <select id="newType" class="fix" style="width:auto"><option value="reps">повторения</option><option value="time">время</option></select></div>
       <input id="newGoal" type="text" inputmode="numeric" placeholder="Цель за один подход (необязательно)" style="margin-top:10px">
       <button class="pri" style="width:100%;margin-top:10px" data-a="add">Добавить</button></div>
+    ${DEFAULTS.some(d => !byId(d.id)) ? '<button class="ghost" style="width:100%" data-a="restore">Вернуть стандартные упражнения</button>' : ''}
     <h2>Резервная копия</h2>
     <div class="card"><div class="row"><button data-a="export">Сохранить в файл</button><button data-a="import">Загрузить из файла</button></div>
       <input id="file" type="file" accept="application/json,.json" hidden></div>
@@ -398,6 +399,16 @@ const actions = {
     const ex = byId(d.id);
     if (!ex || !confirm(`Удалить «${ex.name}» вместе с историей?`)) return;
     S.exercises = S.exercises.filter(e => e !== ex); save(); render();
+  },
+  restart(d) {
+    const ex = byId(d.id);
+    if (!ex || !confirm(`Начать «${ex.name}» заново? Уровень и история по этому упражнению будут удалены.`)) return;
+    ex.max = 0; ex.since = 0; ex.lvl = 0; ex.history = [];
+    save(); render();
+  },
+  restore() {
+    DEFAULTS.filter(d => !byId(d.id)).forEach(d => S.exercises.push({ ...d, max: 0, since: 0, lvl: 0, history: [] }));
+    save(); render();
   },
   retest(d) {
     const ex = byId(d.id);
